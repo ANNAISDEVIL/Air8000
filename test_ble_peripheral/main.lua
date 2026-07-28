@@ -20,6 +20,7 @@ local connected = false
 local notify_index = 0
 local latest_rx = "no data"
 
+-- 定义BLE GATT数据库：通知、可读、可写功能
 local att_db = {
     string.fromHex(config.service_uuid),
     {
@@ -35,7 +36,7 @@ local att_db = {
         ble.READ
     }
 }
-
+-- 返回data的文本和16进制表示
 local function hex_or_text(data)
     if not data or #data == 0 then
         return ""
@@ -43,6 +44,7 @@ local function hex_or_text(data)
     return data, data:toHex()
 end
 
+-- 通知客户端, 日志输出 notify 的内容
 local function notify(value)
     if not connected or not ble_device then
         return false
@@ -142,12 +144,13 @@ sys.taskInit(function()
         return
     end
 
+-- 初始化蓝牙框架
     bluetooth_device = bluetooth.init()
     if not bluetooth_device then
         log.error(TAG, "bluetooth init failed")
         return
     end
-
+-- 创建BLE对象
     ble_device = bluetooth_device:ble(ble_callback)
     if not ble_device then
         log.error(TAG, "ble create failed")
@@ -156,7 +159,7 @@ sys.taskInit(function()
 
     local mac = ble.mac and ble.mac()
     log.info(TAG, "ble mac", mac and mac:toHex() or "unknown")
-
+-- 创建BLE特征属性
     local ok = ble_device:gatt_create(att_db)
     log.info(TAG, "gatt_create", ok)
     if not ok then
