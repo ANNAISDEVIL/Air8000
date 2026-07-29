@@ -13,9 +13,21 @@
 - 连接后每 5 秒通过 `EA01` 发送一次心跳 notify
 - `EA03` 可读，内容会记录最近一次收到的数据
 
+## BLE 特性说明
+
+- 本示例的自定义服务 UUID 是 `FA00`，手机调试工具通常会把它显示为 `Unknown Service`。
+- `Generic Access` 和 `Generic Attribute` 是 BLE 标准服务，通常只显示设备信息和 GATT 元数据，不用于本 demo 的业务数据读写。
+- `EA01` 主要用作通知（Notify）特征，订阅后可以接收回显 `echo:...` 和每 5 秒的心跳消息。
+- `EA02` 是写特征，支持两种写入模式：
+  - `write default`：带响应写（Write with Response）
+  - `write no response`：无响应写（Write without Response）
+  代码同时启用了 `WRITE` 和 `WRITE_CMD`，因此手机端两个选项都可以用，都会触发回显逻辑。
+- `EA03` 是可读特征，可读取到最近一次写入的数据和当前时间戳。
+- `EA01` 仅作为通知（Notify）通道；如果需要写入数据，请使用 `EA02`，如果需要读取最近接收的数据，请使用 `EA03`。
+
 ## 烧录
 
-使用 Luatools 烧录 `main.lua`，并勾选“添加默认 lib”。Air8000 的 BLE 功能依赖 WiFi 协处理器，如果扫描不到设备或连接异常，请先升级/确认 WiFi 固件。
+使用 Luatools 烧录 `main.lua`，并勾选“添加默认 lib”。Air8000 的 BLE 功能依赖 WiFi 协处理器，如果扫描不到设备或连接异常，请确认所用固件/底层无线固件已包含并启用了 BLE 功能并升级到支持 BLE 的固件版本。
 
 ## 手机验证
 
@@ -29,6 +41,12 @@
    - `EA01` 收到 `echo:hello`。
    - `EA01` 每 5 秒收到一次 `Air8000 notify #N`。
    - 读取 `EA03` 可看到最近一次收到的数据。
+
+## 推荐的 BLE 调试助手app
+
+使用建议：
+- 在测试时请确认已对 EA01 打开 Notify（订阅），否则无法接收设备主动发出的通知。
+- 写入时可在 app 中选择带响应（Write with Response）或无响应（Write without Response）；本 demo 支持两者。
 
 ## 参考
 

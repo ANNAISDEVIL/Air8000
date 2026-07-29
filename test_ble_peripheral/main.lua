@@ -25,7 +25,7 @@ local att_db = {
     string.fromHex(config.service_uuid),
     {
         string.fromHex(config.notify_char_uuid),
-        ble.NOTIFY | ble.READ | ble.WRITE
+        ble.NOTIFY
     },
     {
         string.fromHex(config.write_char_uuid),
@@ -58,7 +58,7 @@ local function notify(value)
     log.info(TAG, "notify", ok, value)
     return ok
 end
-
+-- 写入 read 特征的字符串，包含 latest_rx（最近一次收到的数据）和当前时间戳 os.time()。
 local function update_read_value()
     if not ble_device then
         return false
@@ -87,7 +87,7 @@ local function start_adv()
         if ble.COMPLETE_16BIT_SERVICE_UUIDS then
             table.insert(adv_data, {ble.COMPLETE_16BIT_SERVICE_UUIDS, string.fromHex(config.service_uuid)})
         end
-
+-- 设置广播地址、信道、间隔（单位通常是 0.625ms，160*0.625 = 100 ms）
         local ok = ble_device:adv_create({
             addr_mode = ble.PUBLIC,
             channel_map = ble.CHNLS_ALL,
@@ -107,19 +107,21 @@ local function start_adv()
     log.info(TAG, "adv_start", ok, config.device_name)
     return ok
 end
-
+-- 定义 BLE 事件回调函数，参数 dev（设备对象）、event（事件类型）、param（事件参数表）。
 local function ble_callback(dev, event, param)
     log.info(TAG, "event", event)
 
     if event == ble.EVENT_CONN then
         connected = true
         log.info(TAG, "connected", param and param.addr and param.addr:toHex() or "")
-        update_read_value()
+        -- 打印远端地址
+        update_read_value() 
         notify("Air8000 connected")
     elseif event == ble.EVENT_DISCONN then
         connected = false
         log.info(TAG, "disconnected", param and param.reason or "")
         sys.timerStart(start_adv, 1000)
+-- 事件：客户端对某个特征写入数据（写事件）——手机写入 EA02。
     elseif event == ble.EVENT_WRITE then
         local value = param and (param.value or param.data) or ""
         local text, hex = hex_or_text(value)
@@ -127,6 +129,7 @@ local function ble_callback(dev, event, param)
         log.info(TAG, "write", text, hex)
         update_read_value()
         notify("echo:" .. text)
+-- 事件：客户端读取特征值的事件（read），可能收到 param.value。
     elseif event == ble.EVENT_READ_VALUE then
         log.info(TAG, "read value", param and param.value or "")
     else
@@ -156,7 +159,7 @@ sys.taskInit(function()
         log.error(TAG, "ble create failed")
         return
     end
-
+-- 获取本地 BLE MAC 地址
     local mac = ble.mac and ble.mac()
     log.info(TAG, "ble mac", mac and mac:toHex() or "unknown")
 -- 创建BLE特征属性
@@ -165,8 +168,9 @@ sys.taskInit(function()
     if not ok then
         return
     end
-
+-- 初始化时写入一次 read 特征值（包含初始 latest_rx 和时间戳）
     update_read_value()
+-- 启动广播
     start_adv()
 
     while true do
