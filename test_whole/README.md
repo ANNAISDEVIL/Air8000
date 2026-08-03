@@ -126,7 +126,6 @@ Luatools 连接模块后，在 **日志窗口** 可观察：
 |------|------|-----|------|
 | `device/vibration/upload` | 终端 → 云端 | 0 | 振动数据 / 算法结果上报 |
 | `device/vibration/cmd` | 云端 → 终端 | 0 | 云端下发控制指令 |
-| `device/vibration/status` | 终端 → 云端 | 0 | （可选）CSQ / 状态心跳 |
 
 ### Client ID 规则
 
@@ -135,6 +134,52 @@ Luatools 连接模块后，在 **日志窗口** 可观察：
 ```lua
 local MQTT_CLIENT_ID = "vib_" .. mobile.imei()
 ```
+
+---
+
+### 在 MQTT Broker（EMQX Cloud）上的在线测试与调试（控制台）
+
+当 Broker 使用 EMQX Cloud 提供的控制台（或其它同类 Broker 控制台）时，可以直接在控制台的“在线测试 / Web 客户端”页面完成订阅、查看消息和发布测试消息。下面给出在控制台中常用的步骤，便于调试 Air8000 与云端的收发：
+
+1. 登录 EMQX 控制台并打开对应 Deployment 的 “Online Test（在线测试）” 页面。
+
+2. 订阅设备上报主题以查看终端发送的消息：
+   - 在 “订阅 / Subscribe” 输入框中填写主题：`device/vibration/upload`（或 README 中定义的上报主题）。
+   - 选择 QoS（通常为 0），点击 “订阅”。
+   - 订阅成功后，左侧会显示已订阅的主题列表，右侧消息面板会显示实时到达的 payload（参见截图示例）。
+
+3. 验证终端上报：
+   - 确认 Air8000 已正确连接到 Broker（查看模块日志，会有 mqtt connect success）并按配置将串口数据发布到 `device/vibration/upload`。
+   - 在控制台消息窗口可以看到类似的消息条目，例如：
+     - 时间：2026-08-03 17:45:12
+     - 主题：device/vibration/upload
+     - QoS：0
+     - Payload：Hello Air8000 from 113B UARTC, seq = 122
+
+4. 向终端下发测试指令（云端 → 终端）：
+   - 在控制台的发布 / Publish 区域，填写要下发的主题，例如：`device/vibration/cmd` 或具体业务定义的命令主题。
+   - 填写测试 payload（可以是简单文本或 JSON，例如：`{"cmd":"restart"}`），选择合适的 QoS 与 Retain 标志，点击发布。
+   - 观察 Air8000 模块侧是否通过串口将收到的 payload 转发给 DSP（可在模块串口日志或 DSP 端验证）。
+
+5. 常见调试要点：
+   - 若在控制台看不到终端上报消息：
+     - 确认 Air8000 日志显示 mqtt connect success 且 clientid 与控制台中期望的 clientid 一致。
+     - 检查 Broker 地址、端口（1883/8883）与账号密码是否匹配 README 中的配置。
+     - 检查防火墙或云端安全组是否允许入站/出站 MQTT 端口。
+   - 若下发消息终端未收到：
+     - 确认订阅的主题是否与终端实际订阅的主题一致（topic 区分大小写）。
+     - 检查 QoS 与 Retain 设置是否符合需求；对即时控制类指令通常使用 QoS 0 或 1，视可靠性需求而定。
+
+6. 示例流程（快速复现）：
+   - 在控制台订阅：`device/vibration/upload`（QoS 0）
+   - 观察右侧消息区域出现来自设备的上报文本（如 Hello Air8000 ... seq = 119）
+   - 在控制台 Publish 区域对主题 `device/vibration/cmd` 发布 `{"cmd":"ping"}`，模块应将该消息通过串口转发给 DSP 或在日志中打印收到通知。
+
+7. 注意事项：
+   - 控制台在线测试工具仅用于调试，不应作为生产级的消息发送自动化手段。
+   - 若 Broker 开启鉴权（用户名/密码或 token），请在 README 的配置区填写相应凭证，或在控制台创建对应的用户 / token 并使用。
+
+将上述步骤与截图配合使用，可快速验证 Air8000 与云端 Broker 的互通性，便于定位发布 / 订阅、主题配置和消息转发问题。
 
 ---
 

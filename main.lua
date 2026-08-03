@@ -16,9 +16,9 @@ local UART_BAUD = 115200
 local MQTT_BROKER = "g79e1bb3.ala.cn-hangzhou.emqxsl.cn"
 local MQTT_PORT = 8883
 
--- 必须根据EMQX控制台填写
-local MQTT_USER = ""
-local MQTT_PWD = ""
+-- 必须根据EMQX控制台填写, 我自己定义的用户名密码，请自行修改
+local MQTT_USER = "hi111"
+local MQTT_PWD = "111hi"
 
 local PUB_UPLOAD_TOPIC = "device/vibration/upload"
 local SUB_CMD_TOPIC = "device/vibration/cmd"
@@ -34,7 +34,7 @@ local mqtt_ready = false
 local imei = mobile.imei() or "unknown"
 local MQTT_CLIENT_ID = "vib_" .. imei
 
-log.setLevel(log.DEBUG)
+log.setLevel("DEBUG")
 log.info("main", "main.lua start")
 log.info("main", "client id", MQTT_CLIENT_ID)
 
@@ -43,7 +43,6 @@ log.info("main", "client id", MQTT_CLIENT_ID)
 --================================================
 
 local function uart_recv_cb(id, len)
-    -- len是缓冲区数据长度，不是数据本身
     if len == -1 then
         log.info("uart", "wakeup by uart")
         return
@@ -61,8 +60,8 @@ local function uart_recv_cb(id, len)
             "rx",
             "len",
             #data,
-            "hex",
-            data:toHex()
+            "data",
+            data
         )
 
         if net_ready and mqtt_ready and mqtt_client then
