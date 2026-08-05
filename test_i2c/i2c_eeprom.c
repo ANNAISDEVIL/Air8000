@@ -140,6 +140,21 @@ int main(void)
     /* Put I2C peripheral in transmission process */
     /* Timeout is set to 10S  */
     printf("Writing %d bytes to EEPROM at offset %u\n", TXBUFFERSIZE, (unsigned)EEPROM_EXP_OFFSET);
+    PrintBuffer(aTxBuffer, TXBUFFERSIZE);
+    if (I2C_eepromPageWrite(pi2cHandle, EEPROM_EXP_OFFSET, kI2C_MEM_ADDR_SIZE_24BIT, aTxBuffer, TXBUFFERSIZE,
+                            EEPROM_PAGE_SIZE, 10000) != kSTATUS_I2C_OK)
+    {
+        /* Processing Error */
+        Error_Handler();
+    }
+
+    printf("Write complete\n");
+
+    /* Turn LED2 on: Transfer in transmission process is correct */
+    GPIO_writePin(BOARD_GPIO_LED1, 0);
+    DELAY(10000);
+
+    /* Start the reception process */
     /* Timeout is set to 10S */
     if (I2C_eepromPageRead(pi2cHandle, EEPROM_EXP_OFFSET, kI2C_MEM_ADDR_SIZE_24BIT, aRxBuffer, TXBUFFERSIZE,
                            EEPROM_PAGE_SIZE, 10000) == kSTATUS_I2C_TIMEOUT)
@@ -157,41 +172,10 @@ int main(void)
     /* Compare the sent and received buffers */
     if (Buffercmp((uint8_t *)aTxBuffer, (uint8_t *)aRxBuffer, RXBUFFERSIZE))
     {
-        uint16_t i;
-        for (i = 0; i < RXBUFFERSIZE; i++)
-        {
-            if (aTxBuffer[i] != aRxBuffer[i])
-            {
-                break;
-            }
-        }
-        char wt = (aTxBuffer[i] >= 32 && aTxBuffer[i] < 127) ? (char)aTxBuffer[i] : '.';
-        char rd = (aRxBuffer[i] >= 32 && aRxBuffer[i] < 127) ? (char)aRxBuffer[i] : '.';
-        printf("Data mismatch at index %u: wrote 0x%02X('%c') read 0x%02X('%c')\n", (unsigned)i, aTxBuffer[i], wt,
-               aRxBuffer[i], rd);
-        printf("Wrote buffer:");
-        PrintBuffer(aTxBuffer, RXBUFFERSIZE);
-        printf("Read  buffer:");
-        PrintBuffer(aRxBuffer, RXBUFFERSIZE);
         Error_Handler();
     }
     /* Infinite loop */
     while (1)
     {
     }
-}PrintBuffer(aTxBuffer, TXBUFFERSIZE);
-    if (I2C_eepromPageWrite(pi2cHandle, EEPROM_EXP_OFFSET, kI2C_MEM_ADDR_SIZE_24BIT, aTxBuffer, TXBUFFERSIZE,
-                            EEPROM_PAGE_SIZE, 10000) != kSTATUS_I2C_OK)
-    {
-        /* Processing Error */
-        Error_Handler();
-    }
-
-    printf("Write complete\n");
-
-    /* Turn LED2 on: Transfer in transmission process is correct */
-    GPIO_writePin(BOARD_GPIO_LED1, 0);
-    DELAY(10000);
-
-    /* Start the reception process */
-    
+}
