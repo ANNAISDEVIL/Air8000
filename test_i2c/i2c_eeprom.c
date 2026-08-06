@@ -19,7 +19,6 @@
 #include "hte_gpio.h"
 #include "hte_i2c.h"
 #include "hte_sysctrl.h"
-#include <stdio.h>
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -57,32 +56,11 @@ uint8_t aRxBuffer[RXBUFFERSIZE];
 
 static void Error_Handler(void)
 {
-    printf("Error: entering Error_Handler()\n");
     while (1)
     {
         GPIO_togglePin(BOARD_GPIO_LED1);
         DELAY(100000);
     }
-}
-
-static void PrintBuffer(uint8_t *buf, uint16_t len)
-{
-    uint16_t i;
-    for (i = 0; i < len; i++)
-    {
-        if ((i % 16) == 0)
-        {
-            printf("\n%04X: ", i);
-        }
-        printf("%02X ", buf[i]);
-    }
-    printf("\nASCII:");
-    for (i = 0; i < len; i++)
-    {
-        char c = (buf[i] >= 32 && buf[i] < 127) ? (char)buf[i] : '.';
-        putchar(c);
-    }
-    printf("\n");
 }
 
 static uint16_t Buffercmp(uint8_t *pBuffer1, uint8_t *pBuffer2, uint16_t BufferLength)
@@ -139,16 +117,12 @@ int main(void)
 
     /* Put I2C peripheral in transmission process */
     /* Timeout is set to 10S  */
-    printf("Writing %d bytes to EEPROM at offset %u\n", TXBUFFERSIZE, (unsigned)EEPROM_EXP_OFFSET);
-    PrintBuffer(aTxBuffer, TXBUFFERSIZE);
     if (I2C_eepromPageWrite(pi2cHandle, EEPROM_EXP_OFFSET, kI2C_MEM_ADDR_SIZE_24BIT, aTxBuffer, TXBUFFERSIZE,
                             EEPROM_PAGE_SIZE, 10000) != kSTATUS_I2C_OK)
     {
         /* Processing Error */
         Error_Handler();
     }
-
-    printf("Write complete\n");
 
     /* Turn LED2 on: Transfer in transmission process is correct */
     GPIO_writePin(BOARD_GPIO_LED1, 0);
@@ -163,15 +137,13 @@ int main(void)
         Error_Handler();
     }
 
-    printf("Read complete, %d bytes from EEPROM at offset %u\n", TXBUFFERSIZE, (unsigned)EEPROM_EXP_OFFSET);
-    PrintBuffer(aRxBuffer, RXBUFFERSIZE);
-
     /* Turn LED2 off: Transfer in reception process is correct */
     GPIO_writePin(BOARD_GPIO_LED1, 1);
 
     /* Compare the sent and received buffers */
     if (Buffercmp((uint8_t *)aTxBuffer, (uint8_t *)aRxBuffer, RXBUFFERSIZE))
     {
+        /* Processing Error */
         Error_Handler();
     }
     /* Infinite loop */

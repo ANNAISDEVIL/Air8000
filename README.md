@@ -5,7 +5,7 @@
 - Luatools 使用文档（强烈建议阅读）：https://docs.openluat.com/common/Luatools/
 - Air8000 LuatOS固件版本：https://docs.openluat.com/air8000/luatos/firmware/#sdkdemo
 - Air8000 固件历史版本：https://cdn18.luatos.com/files/Air8000/LuatOS_Air8000/LuatOS-SoC_V2048_Air8000/
-- Air8000 开发文档（MQTT为例）：https://docs.openluat.com/osapi/core/mqtt/#47-mqttconcb
+- Air8000 开发文档：https://docs.openluat.com/luatos_lesson/
 - Air8000 demo git：https://gitee.com/openLuat/LuatOS/tree/master/module/Air8000/demo
 
 
